@@ -463,3 +463,99 @@ describe "a versionable binary datastream" do
     end
   end
 end
+
+describe "a versionable complex object" do
+
+  before(:all) do
+    class BinaryDatastream < ActiveFedora::Datastream
+      has_many_versions 
+    end
+    class VersionableDatastream < ActiveFedora::NtriplesRDFDatastream
+      has_many_versions
+      property :title, predicate: RDF::DC.title
+    end
+
+    class ComplexObject < ActiveFedora::Base
+      has_file_datastream "binaryData", type: BinaryDatastream, autocreate: true
+      has_metadata "descMetadata", type: VersionableDatastream, autocreate: true
+      property :title, predicate: RDF::DC.title
+    end
+  end
+
+  after(:all) do
+    Object.send(:remove_const, :ComplexObject)
+    Object.send(:remove_const, :BinaryDatastream)
+  end
+
+  let(:complex_object) { ComplexObject.new }
+
+  context "without data" do
+    describe "the object's versions" do
+      subject { complex_object.versions }
+      it { is_expected.to be_empty }
+    end
+
+    describe "the datastreams' versions" do
+      it "should be empty" do
+        expect(complex_object.descMetadata.versions).to be_empty
+        expect(complex_object.binaryData.versions).to be_empty
+      end
+    end
+  end
+
+  context "with data" do
+    let(:first_file) { File.new(File.join( File.dirname(__FILE__), "../fixtures/dino.jpg" )) }
+    let(:first_name) { "dino.jpg" }
+    before do
+      complex_object.title = first_name
+      complex_object.descMetadata.title = first_name
+      complex_object.binaryData.content = first_file
+      complex_object.binaryData.original_name = first_name
+      complex_object.save
+      complex_object.create_version
+    end
+
+    describe "the object's versions" do
+      subject { complex_object.versions }
+      it "should have one version (plus the root version)" do
+        expect(subject.count).to eq 2
+      end 
+    end
+
+    describe "the descriptive metadata datastream's versions" do
+      subject { complex_object.descMetadata.versions }
+      context "without calling .create_version" do
+        it "should have no versions" do
+          expect(subject.count).to eq 0
+        end
+      end
+      context "after calling .create_version" do
+        before do
+          complex_object.descMetadata.create_version
+        end
+        it "should have one version (plus the root version)" do
+          expect(subject.count).to eq 2
+        end 
+      end
+    end
+
+    describe "the binary datastream's versions" do
+      subject { complex_object.binaryData.versions }
+      context "without calling .create_version" do
+        it "should have no versions" do
+          expect(subject.count).to eq 0
+        end
+      end
+      context "after calling .create_version" do
+        before do
+          complex_object.binaryData.create_version
+        end
+        it "should have one version (plus the root version)" do
+          expect(subject.count).to eq 2
+        end 
+      end
+    end
+
+  end
+
+end

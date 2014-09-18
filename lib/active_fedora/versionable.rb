@@ -62,6 +62,7 @@ module ActiveFedora
       end
 
       def versions_request
+        return '' if versions_url.nil?
         resp = begin
           ActiveFedora.fedora.connection.get(versions_url)
         rescue Ldp::NotFound
@@ -76,11 +77,11 @@ module ActiveFedora
       end
 
       def versions_url
-        uri + '/fcr:versions'
+        uri.nil? ? nil : uri + '/fcr:versions'
       end
 
       def version_url uuid
-        versions_url + '/' + uuid
+        versions_url.nil? ? nil : versions_url + '/' + uuid
       end
 
       def assert_versionable
