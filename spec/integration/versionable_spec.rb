@@ -34,6 +34,14 @@ describe "a versionable class" do
       expect(subject.versions.first).to be_kind_of RDF::URI
     end
 
+    it "should have a root version" do
+      expect(subject.root_version).to eq(subject.versions.first)
+    end
+
+    it "should have an initial version that equals its latest version" do
+      expect(subject.latest_version).to eq(subject.initial_version)
+    end
+
     context "two times" do
       before do
         subject.title = "Surrender and prepare to be boarded"

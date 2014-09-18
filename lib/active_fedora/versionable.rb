@@ -21,6 +21,18 @@ module ActiveFedora
       results.map(&:object)
     end
 
+    def root_version
+      versions.first
+    end
+
+    def latest_version
+      versions.last
+    end
+
+    def initial_version
+      versions[1]
+    end
+
     def create_version
       resp = ActiveFedora.fedora.connection.post(versions_url)
       @versions_graph = nil
